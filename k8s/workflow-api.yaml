@@ -1,0 +1,67 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: workflow-api
+spec:
+  selector:
+    matchLabels:
+      app: workflow-api
+  template:
+    metadata:
+      labels:
+        app: workflow-api
+    spec:
+      serviceAccountName: workflow-api-service-account
+      volumes:
+        - name: workflow-api-config
+          secret:
+            secretName: workflow-api-config
+      containers:
+        - name: workflow-api
+          image: harbor.gx4ki.imla.hs-offenburg.de/gx4ki/workflow-api:latest
+          imagePullPolicy: IfNotPresent
+          resources:
+            limits:
+              memory: "512Mi"
+              cpu: "500m"
+          ports:
+            - containerPort: 8080
+          envFrom:
+            - configMapRef:
+                name: workflow-api-env
+          volumeMounts:
+            - mountPath: /opt/k8s-api/config
+              name: workflow-api-config
+              readOnly: true
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: workflow-api
+spec:
+  type: ClusterIP
+  selector:
+    app: workflow-api
+  ports:
+    - port: 8080
+      targetPort: 8080
+# ---
+# apiVersion: networking.k8s.io/v1
+# kind: Ingress
+# metadata:
+#   name: workflow-api-ingress
+#   labels:
+#     name: workflow-api-ingress
+# spec:
+#   rules:
+#   - host: k8s.local
+#     http:
+#       paths:
+#       - pathType: Prefix
+#         path: "/"
+#         backend:
+#           service:
+#             name: workflow-api
+#             port:
+#               number: 80
+

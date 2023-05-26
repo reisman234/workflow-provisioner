@@ -21,6 +21,7 @@ RUN python -m venv .venv \
     && source .venv/bin/activate \
     && pip install -r requirements.txt
 
+COPY k8s ./k8s
 COPY middlelayer ./middlelayer
 
 CMD ["/bin/sh", "entrypoint.sh"]

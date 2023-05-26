@@ -10,3 +10,16 @@ image:
 publish:
 	docker build --pull --no-cache -t ${REPOSITORY}/${APPLICATION} .
 	docker push ${REPOSITORY}/${APPLICATION}
+
+test-run:
+	docker rm -f workflow-provisioner
+	docker create  --rm --name workflow-provisioner \
+	-v ./config/.kube:/root/.kube \
+	-v ./database/:/opt/database \
+	${REPOSITORY}/${APPLICATION}
+
+	docker network connect imla-net workflow-provisioner --alias workflow-provisioner
+	docker network connect minikube workflow-provisioner --alias workflow-provisioner
+
+	docker start workflow-provisioner
+	docker logs --follow workflow-provisioner
