@@ -17,6 +17,7 @@ WORKDIR /opt/
 # python environment
 COPY requirements.txt requirements.txt
 COPY entrypoint.sh entrypoint.sh
+COPY create-kubeconfig.inc create-kubeconfig.inc
 RUN python -m venv .venv \
     && source .venv/bin/activate \
     && pip install -r requirements.txt
