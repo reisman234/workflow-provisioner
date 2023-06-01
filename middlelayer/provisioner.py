@@ -194,9 +194,10 @@ def deploy_workflow_api(workflow_backend_id: str):
             f"cat {tmp_file.name}",
             f"kubectl -n {user_namespace} create secret generic workflow-api-config --from-file=workflow-api.cfg={tmp_file.name}",
             f"kubectl -n {user_namespace} create configmap workflow-api-env --from-env-file={tmp_env_file.name}",
+            f"kubectl -n {user_namespace} apply -f ./k8s/secrets/imla-registry-secret.yaml",
+            f"kubectl -n {user_namespace} apply -f ./k8s/workflow-api-service-account.yaml"
             f"kubectl -n {user_namespace} apply -f ./k8s/workflow-api.yaml",
             f"kubectl -n {user_namespace} apply -f {tmp_k8s_ingress.name}",
-            f"kubectl -n {user_namespace} apply -f ./k8s/workflow-api-service-account.yaml"
         ]
 
         for cmd in cmd_deploy_workflow_api:

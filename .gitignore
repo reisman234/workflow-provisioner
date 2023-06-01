@@ -4,3 +4,4 @@ __pycache__
 config/.kube/cache
 config/.kube/config
 database/
+k8s/secrets

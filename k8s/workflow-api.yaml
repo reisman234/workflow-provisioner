@@ -11,6 +11,8 @@ spec:
       labels:
         app: workflow-api
     spec:
+      imagePullSecrets:
+        - name: imla-registry-secret
       serviceAccountName: workflow-api-service-account
       volumes:
         - name: workflow-api-config
