@@ -1,0 +1,65 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: demo-assets
+data:
+  dummy.json: |
+    {
+      "service_id": "dummy",
+      "inputs": [
+          {
+              "resource_name": "env",
+              "type": 1,
+              "description": "List of environment Variables for dummy-job Container"
+          }
+      ],
+      "outputs": [
+          {
+              "resource_name": "result",
+              "type": 2,
+              "description": "dummy output file"
+          }
+      ],
+      "workflow_resource": {
+          "worker_image": "imlahso/dummy-job:latest",
+          "worker_image_output_directory": "/output/",
+          "gpu": false
+      }
+    }
+  carla.json: |
+    {
+      "service_id": "carla",
+      "inputs":
+        [
+          {
+            "resource_name": "env",
+            "type": 1,
+            "description": "List of environment Variables for Carla Container"
+          }
+        ],
+      "outputs":
+        [
+          {
+            "resource_name": "rosbag",
+            "type": 2,
+            "description": "Generated rosbag file from .env file"
+          }
+        ],
+      "workflow_resource":
+        {
+          "worker_image": "harbor.gx4ki.imla.hs-offenburg.de/gx4ki/carla:latest",
+          "worker_image_output_directory": "/home/carla/rosbag",
+          "gpu": true
+        }
+    }
+  nginx.json: |
+    {
+      "service_id": "nginx",
+      "inputs": [],
+      "outputs": [],
+      "workflow_resource": {
+        "worker_image": "nginx:latest",
+        "worker_image_output_directory": "",
+        "gpu": false
+      }
+    }

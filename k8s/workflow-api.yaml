@@ -12,12 +12,15 @@ spec:
         app: workflow-api
     spec:
       imagePullSecrets:
-        - name: imla-registry-secret
+        - name: imla-registry
       serviceAccountName: workflow-api-service-account
       volumes:
         - name: workflow-api-config
           secret:
             secretName: workflow-api-config
+        - name: demo-assets
+          configMap:
+            name: demo-assets
       containers:
         - name: workflow-api
           image: harbor.gx4ki.imla.hs-offenburg.de/gx4ki/workflow-api:latest
@@ -35,6 +38,8 @@ spec:
             - mountPath: /opt/k8s-api/config
               name: workflow-api-config
               readOnly: true
+            - name: demo-assets
+              mountPath: /opt/k8s-api/assets
 ---
 apiVersion: v1
 kind: Service

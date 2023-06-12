@@ -112,13 +112,13 @@ def handle_edc_request(provisioner_request: HttpProvisionerRequest, db: Session)
 
     try:
         logger.debug("callback to %s", completeUrl)
-        requests.post(url=completeUrl,
-                      json=data.dict(),
-                      headers={"x-api-key": "password"})
+        response = requests.post(url=completeUrl,
+                                 json=data.dict(),
+                                 headers={"x-api-key": "password"})
     except ConnectionError as connection_error:
         print(f"ConnectionError: {connection_error}")
     finally:
-        logger.debug("work finished")
+        logger.debug("work finished: callback request status: %s", response.status_code)
 
 
 def deploy_workflow_api(workflow_backend_id: str):
@@ -195,7 +195,8 @@ def deploy_workflow_api(workflow_backend_id: str):
             f"kubectl -n {user_namespace} create secret generic workflow-api-config --from-file=workflow-api.cfg={tmp_file.name}",
             f"kubectl -n {user_namespace} create configmap workflow-api-env --from-env-file={tmp_env_file.name}",
             f"kubectl -n {user_namespace} apply -f ./k8s/secrets/imla-registry-secret.yaml",
-            f"kubectl -n {user_namespace} apply -f ./k8s/workflow-api-service-account.yaml"
+            f"kubectl -n {user_namespace} apply -f ./k8s/workflow-api-service-account.yaml",
+            f"kubectl -n {user_namespace} apply -f ./k8s/workflow-api-demo-assets.yml",
             f"kubectl -n {user_namespace} apply -f ./k8s/workflow-api.yaml",
             f"kubectl -n {user_namespace} apply -f {tmp_k8s_ingress.name}",
         ]
