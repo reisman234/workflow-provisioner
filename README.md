@@ -14,7 +14,7 @@ After the deployment the access information can be retrieved.
 At the moment scripts and the image is designend to run a separately in it's container.
 The following shows a high level overiew of a local demo setup.
 
-![Workflow Provider](docs/overview.png)
+![Workflow Provider](docs/dev_local-demo-deployment.png)
 
 To run a local development setup of the workflow-provisioner container use the `test-run` target in the Makefile.
 It creates a container and connects it to expected networks for the minikube cluster and the edc-connectors
