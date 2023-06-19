@@ -5,24 +5,23 @@ After the deployment the access information can be retrieved.
 
 ## Prerequisite
 
-- edc connectors with the required extensions and config ready
+- having edc connectors with the required extensions and config ready
+  - provisioner extension
 - running k8s
-  - provisioner admin service-account
+  - use the [local setup](./docs/setup.md) guide to prepare a local minikube.
 
 ## Container Setup
 
-At the moment scripts and the image is designend to run a separately in it's container.
-The following shows a high level overiew of a local demo setup.
+At the moment, scripts and the image is designend to run a separately in it's container.
+The following shows a overiew of this local demo setup.
 
-![Workflow Provider](docs/dev_local-demo-deployment.png)
+![Workflow Provider](docs/workflow-provisioner.drawio.png)
 
-To run a local development setup of the workflow-provisioner container use the `test-run` target in the Makefile.
+After the cluster and connectors are prepared, run the workflow-provisioner container with the `test-run` target in the provided Makefile.
 It creates a container and connects it to expected networks for the minikube cluster and the edc-connectors
 
 ```
 make test-run
 ```
-
-### Test Setup
 
 After everything is running, the connectors can make their contract negotiation phase, which will in the end trigger provisioning process.

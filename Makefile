@@ -19,7 +19,7 @@ test-run:
 	-v ./k8s/secrets/:/opt/k8s/secrets \
 	${REPOSITORY}/${APPLICATION}
 
-	docker network connect imla-net workflow-provisioner --alias workflow-provisioner
+	docker network connect edc-net workflow-provisioner --alias workflow-provisioner
 	docker network connect minikube workflow-provisioner --alias workflow-provisioner
 
 	docker start workflow-provisioner
