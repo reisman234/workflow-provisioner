@@ -2,6 +2,7 @@
 Provisioner module which is used by edc-connector.
 Provisions the workflow-api for a requested service
 """
+import os
 import subprocess
 import tempfile
 import uuid
@@ -24,6 +25,15 @@ from .logging import logger
 models.Base.metadata.create_all(bind=engine)
 
 provisioner = FastAPI()
+
+# CONFIG
+
+WF_API_ROOT_PATH = os.getenv("WF_API_ROOT_PATH", "workflowapi/api/")
+logger.info("WF_API_ROOT_PATH: %s", WF_API_ROOT_PATH)
+
+BACKEND_ENTRYPOINT = os.getenv("WF_PROVISIONER_BACKEND_ENTRYPOINT")
+if not BACKEND_ENTRYPOINT:
+    raise ValueError("unspecified variable: WF_PROVISIONER_BACKEND_ENTRYPOINT")
 
 # dependency
 
@@ -133,7 +143,7 @@ def deploy_workflow_api(workflow_backend_id: str):
     ]
 
     workflow_api_env = f"""
-    FASTAPI_ROOT_PATH=/consumer/api/{workflow_backend_id}/
+    FASTAPI_ROOT_PATH=/{WF_API_ROOT_PATH}{workflow_backend_id}/
     """
 
     workflow_api_config = f"""
@@ -152,6 +162,16 @@ def deploy_workflow_api(workflow_backend_id: str):
     secure = false
     """
 
+    k8s_namespace = f"""
+    apiVersion: v1
+    kind: Namespace
+    metadata:
+      creationTimestamp: null
+      name: {user_namespace}
+      labels:
+        project: gx4ki
+    """
+
     k8s_ingress_manifest = f"""
     apiVersion: networking.k8s.io/v1
     kind: Ingress
@@ -163,22 +183,25 @@ def deploy_workflow_api(workflow_backend_id: str):
         nginx.ingress.kubernetes.io/rewrite-target: /$2
     spec:
       rules:
-      - host: k8s.local
+      - host: {BACKEND_ENTRYPOINT}
         http:
           paths:
           - pathType: Prefix
-            path: /consumer/api/{workflow_backend_id}(/|$)(.*)
+            path: /{WF_API_ROOT_PATH}{workflow_backend_id}(/|$)(.*)
             backend:
               service:
                 name: workflow-api
                 port:
                   number: 8080
     """
-    # /consumer/api/64171f41-512d-4eed-add9-2f79033f1f9c/
 
     with tempfile.NamedTemporaryFile(mode="w", encoding="utf8") as tmp_file, \
             tempfile.NamedTemporaryFile(mode="w", encoding="utf8") as tmp_env_file,\
-            tempfile.NamedTemporaryFile(mode="w", encoding="utf8") as tmp_k8s_ingress:
+            tempfile.NamedTemporaryFile(mode="w", encoding="utf8") as tmp_k8s_ingress,\
+            tempfile.NamedTemporaryFile(mode="w", encoding="utf8") as tmp_k8s_namespace:
+
+        tmp_k8s_namespace.write(k8s_namespace)
+        tmp_k8s_namespace.flush()
 
         tmp_file.write(workflow_api_config)
         tmp_file.flush()
@@ -190,7 +213,7 @@ def deploy_workflow_api(workflow_backend_id: str):
         tmp_k8s_ingress.flush()
 
         cmd_deploy_workflow_api = [
-            f"kubectl create namespace {user_namespace}",
+            f"kubectl apply -f {tmp_k8s_namespace.name}",
             f"cat {tmp_file.name}",
             f"kubectl -n {user_namespace} create secret generic workflow-api-config --from-file=workflow-api.cfg={tmp_file.name}",
             f"kubectl -n {user_namespace} create configmap workflow-api-env --from-env-file={tmp_env_file.name}",
@@ -252,7 +275,7 @@ def deploy_workflow_api(workflow_backend_id: str):
 @provisioner.get("/details/")
 async def get_backend_credentials(workflow_id: str):
 
-    HOSTNAME = "http://k8s.local/consumer/api/"
+    HOSTNAME = f"http://{BACKEND_ENTRYPOINT}/{WF_API_ROOT_PATH}"
 
     # TODO get api token
     TOKEN = "token"
@@ -261,6 +284,32 @@ async def get_backend_credentials(workflow_id: str):
         url=f"{HOSTNAME}{workflow_id}/docs",
         token=TOKEN)
     return api_details
+
+
+@provisioner.post("/provision/static/")
+async def static_provision(consumer_name: str, db: Session = Depends(get_db)):
+
+    workflow_backend_id = str(uuid.uuid4())
+    logger.debug("do static provisioning")
+    consumer = crud.get_consumer_by_consumer_id(db=db,
+                                                consumer_id=consumer_name)
+    if not consumer:
+        t = Thread(target=deploy_workflow_api,
+                   kwargs={"workflow_backend_id": workflow_backend_id})
+        t.start()
+
+        consumer = crud.create_consumer(db=db,
+                                        consumer=schemas.ConsumerCreate(
+                                            id=consumer_name,
+                                            workflow_backend_id=workflow_backend_id))
+    return consumer
+
+
+@provisioner.get("/provision/consumers")
+async def get_consumers(db: Session = Depends(get_db)):
+
+    consumers = crud.get_consumers(db=db)
+    return consumers
 
 
 @provisioner.post("/provision/")

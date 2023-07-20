@@ -21,8 +21,10 @@ data:
           }
       ],
       "workflow_resource": {
-          "worker_image": "imlahso/dummy-job:latest",
+          "worker_image": "harbor.gx4ki.imla.hs-offenburg.de/gx4ki/dummy-job@sha256:4dc4743b414b84aebcbe1755f3172c40811868caafffbbdad31925642763637b",
           "worker_image_output_directory": "/output/",
+          "worker_image_args": ["entrypoint.sh"],
+          "worker_image_command": ["/bin/sh"],
           "gpu": false
       }
     }
@@ -40,26 +42,17 @@ data:
       "outputs":
         [
           {
-            "resource_name": "rosbag",
+            "resource_name": "rosbag.bag",
             "type": 2,
             "description": "Generated rosbag file from .env file"
           }
         ],
       "workflow_resource":
         {
-          "worker_image": "harbor.gx4ki.imla.hs-offenburg.de/gx4ki/carla:latest",
+          "worker_image": "harbor.gx4ki.imla.hs-offenburg.de/gx4ki/carla:test",
           "worker_image_output_directory": "/home/carla/rosbag",
+          "worker_image_args": ["entrypoint.sh"],
+          "worker_image_command": ["/bin/bash"],
           "gpu": true
         }
-    }
-  nginx.json: |
-    {
-      "service_id": "nginx",
-      "inputs": [],
-      "outputs": [],
-      "workflow_resource": {
-        "worker_image": "nginx:latest",
-        "worker_image_output_directory": "",
-        "gpu": false
-      }
     }

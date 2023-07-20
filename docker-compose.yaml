@@ -1,0 +1,25 @@
+services:
+
+  workflow-provisioner:
+    build:
+      context: .
+    env_file: ./config/workflow-provisioner.env
+    container_name: workflow-provisioner
+    volumes:
+      - ./config/.kube:/root/.kube
+      - ./database/:/opt/database
+      - ./k8s/secrets/:/opt/k8s/secrets
+
+    networks:
+      edc-net:
+        aliases:
+          - "workflow-provisioner"
+      minikube:
+        aliases:
+          - "workflow-provisioner"
+
+networks:
+  edc-net:
+    external: true
+  minikube:
+    external: true

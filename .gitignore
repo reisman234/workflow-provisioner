@@ -3,5 +3,6 @@ __pycache__
 
 config/.kube/cache
 config/.kube/config
+config/workflow-provisioner.env
 database/
 k8s/secrets

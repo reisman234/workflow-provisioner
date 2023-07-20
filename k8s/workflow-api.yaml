@@ -23,8 +23,8 @@ spec:
             name: demo-assets
       containers:
         - name: workflow-api
-          image: harbor.gx4ki.imla.hs-offenburg.de/gx4ki/workflow-api:latest
-          imagePullPolicy: IfNotPresent
+          image: harbor.gx4ki.imla.hs-offenburg.de/gx4ki/workflow-api@sha256:fdc52fbc35e67f4eb36e6cf49913f6c0a88097d789011fcaaa6a8e669260e51e
+          imagePullPolicy: Always
           resources:
             limits:
               memory: "512Mi"
