@@ -20,7 +20,8 @@ def get_consumers(db: Session, skip: int = 0, limit: int = 100):
 def create_consumer(db: Session, consumer: schemas.ConsumerCreate):
     db_consumer = models.Consumer(
         id=consumer.id,
-        workflow_backend_id=consumer.workflow_backend_id)
+        workflow_backend_id=consumer.workflow_backend_id,
+        workflow_api_access_token=consumer.access_token)
     db.add(db_consumer)
     db.commit()
     db.refresh(db_consumer)

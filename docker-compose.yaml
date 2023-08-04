@@ -3,18 +3,24 @@ services:
   workflow-provisioner:
     build:
       context: .
+    image: gx4ki/workflow-provisioner
     env_file: ./config/workflow-provisioner.env
     container_name: workflow-provisioner
+
     volumes:
       - ./config/.kube:/root/.kube
       - ./database/:/opt/database
       - ./k8s/secrets/:/opt/k8s/secrets
 
+      - ./middlelayer/:/opt/middlelayer
+    ports:
+      - 8888:8888
     networks:
       edc-net:
         aliases:
           - "workflow-provisioner"
       minikube:
+        ipv4_address: 192.168.49.3
         aliases:
           - "workflow-provisioner"
 

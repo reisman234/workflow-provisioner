@@ -12,6 +12,7 @@ class WorkflowAsset(BaseModel):
 
 class ConsumerBase(BaseModel):
     id: str
+    access_token: str
 
 
 class ConsumerCreate(ConsumerBase):

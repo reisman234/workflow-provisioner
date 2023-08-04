@@ -23,7 +23,7 @@ spec:
             name: demo-assets
       containers:
         - name: workflow-api
-          image: harbor.gx4ki.imla.hs-offenburg.de/gx4ki/workflow-api@sha256:fdc52fbc35e67f4eb36e6cf49913f6c0a88097d789011fcaaa6a8e669260e51e
+          image: harbor.gx4ki.imla.hs-offenburg.de/gx4ki/workflow-api:latest
           imagePullPolicy: Always
           resources:
             limits:
@@ -35,11 +35,11 @@ spec:
             - configMapRef:
                 name: workflow-api-env
           volumeMounts:
-            - mountPath: /opt/k8s-api/config
+            - mountPath: /opt/config/
               name: workflow-api-config
               readOnly: true
             - name: demo-assets
-              mountPath: /opt/k8s-api/assets
+              mountPath: /opt/config/assets
 ---
 apiVersion: v1
 kind: Service

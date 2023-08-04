@@ -21,7 +21,7 @@ data:
           }
       ],
       "workflow_resource": {
-          "worker_image": "harbor.gx4ki.imla.hs-offenburg.de/gx4ki/dummy-job@sha256:4dc4743b414b84aebcbe1755f3172c40811868caafffbbdad31925642763637b",
+          "worker_image": "harbor.gx4ki.imla.hs-offenburg.de/gx4ki/dummy-job@sha256:89475128de6cc831886b87319b6ca66da99fe05c83877d5d37d6a7cb437e9a92",
           "worker_image_output_directory": "/output/",
           "worker_image_args": ["entrypoint.sh"],
           "worker_image_command": ["/bin/sh"],

@@ -10,6 +10,7 @@ class Consumer(Base):
 
     id = Column(String, unique=True, index=True)
     workflow_backend_id = Column(Uuid(as_uuid=True), primary_key=True, unique=True, index=True)
+    workflow_api_access_token = Column(String(50))
     # pylint: disable=not-callable
     deployment_date = Column(DateTime, default=func.current_timestamp())
 

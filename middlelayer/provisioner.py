@@ -10,6 +10,7 @@ from threading import Thread
 from typing import List
 import time
 from fastapi import FastAPI, Depends, HTTPException
+from starlette.status import HTTP_404_NOT_FOUND
 import requests
 
 from sqlalchemy.orm import Session
@@ -30,6 +31,9 @@ provisioner = FastAPI()
 
 WF_API_ROOT_PATH = os.getenv("WF_API_ROOT_PATH", "workflowapi/api/")
 logger.info("WF_API_ROOT_PATH: %s", WF_API_ROOT_PATH)
+
+# set a static access token which is used for a deployed workflow-api
+WF_API_STATIC_ACCESS_TOKEN = os.getenv("WF_API_STATIC_ACCESS_TOKEN")
 
 BACKEND_ENTRYPOINT = os.getenv("WF_PROVISIONER_BACKEND_ENTRYPOINT")
 if not BACKEND_ENTRYPOINT:
@@ -92,11 +96,19 @@ def handle_edc_request(provisioner_request: HttpProvisionerRequest, db: Session)
         # consumer unknown deploy workflow_api
         logger.debug("consumer unknown with id=%s, deploy workflow_backend with id=%s",
                      consumer_connector_id, workflow_backend_id)
-        deploy_workflow_api(workflow_backend_id=workflow_backend_id)
+
+        access_token = str(uuid.uuid4())
+        if WF_API_STATIC_ACCESS_TOKEN:
+            access_token = WF_API_STATIC_ACCESS_TOKEN
+
+        deploy_workflow_api(workflow_backend_id=workflow_backend_id,
+                            workflow_api_access_token=access_token)
+
         consumer = crud.create_consumer(db=db,
                                         consumer=schemas.ConsumerCreate(
                                             id=consumer_connector_id,
-                                            workflow_backend_id=workflow_backend_id)
+                                            workflow_backend_id=workflow_backend_id,
+                                            access_token=access_token)
                                         )
 
     if not crud.consumer_has_workflow_asset(
@@ -131,7 +143,8 @@ def handle_edc_request(provisioner_request: HttpProvisionerRequest, db: Session)
         logger.debug("work finished: callback request status: %s", response.status_code)
 
 
-def deploy_workflow_api(workflow_backend_id: str):
+def deploy_workflow_api(workflow_backend_id: str,
+                        workflow_api_access_token: str):
 
     logger.debug("do_provision")
 
@@ -149,11 +162,12 @@ def deploy_workflow_api(workflow_backend_id: str):
     workflow_api_config = f"""
     [workflow_api]
     workflow_api_user = dummy-user
-    workflow_api_access_token = token
+    workflow_api_access_token = {workflow_api_access_token}
 
     workflow_backend = kubernetes
     workflow_backend_namespace = {workflow_backend_id}
     workflow_backend_image_pull_secret = imla-registry
+    workflow_backend_data_side_car_image = harbor.gx4ki.imla.hs-offenburg.de/gx4ki/data-side-car:latest
 
     [minio]
     endpoint = minio:9000
@@ -228,8 +242,8 @@ def deploy_workflow_api(workflow_backend_id: str):
             result = subprocess.run(
                 cmd.split(),
                 stdout=subprocess.PIPE,
-                stderr=subprocess.PIPE
-                # check=True
+                stderr=subprocess.PIPE,
+                check=True
             )
             logger.debug(result)
 
@@ -246,7 +260,7 @@ def deploy_workflow_api(workflow_backend_id: str):
         "--set",
         "replicas=1",
         "--set",
-        "persistence.enabled=false",
+        "persistence.enabled=true",
         "--set",
         "mode=standalone",
         "--set",
@@ -273,35 +287,48 @@ def deploy_workflow_api(workflow_backend_id: str):
 
 
 @provisioner.get("/details/")
-async def get_backend_credentials(workflow_id: str):
+async def get_backend_credentials(consumer_id: str, db: Session = Depends(get_db)):
 
-    HOSTNAME = f"http://{BACKEND_ENTRYPOINT}/{WF_API_ROOT_PATH}"
+    consumer = crud.get_consumer_by_consumer_id(db=db,
+                                                consumer_id=consumer_id)
 
-    # TODO get api token
-    TOKEN = "token"
+    if not consumer:
+        raise HTTPException(status_code=HTTP_404_NOT_FOUND,
+                            detail="consumer_id not exist")
+
+    base_url = f"http://{BACKEND_ENTRYPOINT}/{WF_API_ROOT_PATH}"
 
     api_details = schemas.WorkflowBackendDetails(
-        url=f"{HOSTNAME}{workflow_id}/docs",
-        token=TOKEN)
+        url=f"{base_url}{consumer.workflow_backend_id}/docs",
+        token=consumer.workflow_api_access_token)
+
     return api_details
 
 
 @provisioner.post("/provision/static/")
-async def static_provision(consumer_name: str, db: Session = Depends(get_db)):
+async def static_provision(consumer_name: str,
+                           db: Session = Depends(get_db)):
 
     workflow_backend_id = str(uuid.uuid4())
     logger.debug("do static provisioning")
     consumer = crud.get_consumer_by_consumer_id(db=db,
                                                 consumer_id=consumer_name)
+
+    access_token = str(uuid.uuid4())
+    if WF_API_STATIC_ACCESS_TOKEN:
+        access_token = WF_API_STATIC_ACCESS_TOKEN
+
     if not consumer:
         t = Thread(target=deploy_workflow_api,
-                   kwargs={"workflow_backend_id": workflow_backend_id})
+                   kwargs={"workflow_backend_id": workflow_backend_id,
+                           "workflow_api_access_token": access_token})
         t.start()
 
         consumer = crud.create_consumer(db=db,
                                         consumer=schemas.ConsumerCreate(
                                             id=consumer_name,
-                                            workflow_backend_id=workflow_backend_id))
+                                            workflow_backend_id=workflow_backend_id,
+                                            access_token=access_token))
     return consumer
 
 
