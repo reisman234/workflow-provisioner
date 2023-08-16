@@ -23,3 +23,7 @@ spec:
               cpu: "500m"
           ports:
             - containerPort: 8888
+      volumes:
+        - name: database
+          persistentVolumeClaim:
+            claimName: workflow-provisioner
