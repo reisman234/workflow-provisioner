@@ -23,6 +23,9 @@ spec:
               cpu: "500m"
           ports:
             - containerPort: 8888
+          volumeMounts:
+            - name: database
+              mountPath: /opt/database
       volumes:
         - name: database
           persistentVolumeClaim:
