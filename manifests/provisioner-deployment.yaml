@@ -4,6 +4,8 @@ metadata:
   name: workflow-provisioner
 spec:
   replicas: 1
+  strategy:
+    type: Recreate
   selector:
     matchLabels:
       app: workflow-provisioner
@@ -26,6 +28,9 @@ spec:
           volumeMounts:
             - name: database
               mountPath: /opt/database
+          envFrom:
+            - configMapRef:
+                name: workflow-provisioner-env
       volumes:
         - name: database
           persistentVolumeClaim:
