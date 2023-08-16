@@ -1,0 +1,23 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: workflow-provisioner
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: workflow-provisioner
+  template:
+    metadata:
+      labels:
+        app: workflow-provisioner
+    spec:
+      containers:
+        - name: workflow-provisioner
+          image: harbor.gx4ki.imla.hs-offenburg.de/gx4ki/workflow-provisioner@sha256:11c35547260c20b2dba507e2737b63e59cfa0c9362e98cf998d790a56061a852
+          resources:
+            limits:
+              memory: "256Mi"
+              cpu: "500m"
+          ports:
+            - containerPort: 8888
