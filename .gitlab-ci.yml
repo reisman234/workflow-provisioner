@@ -1,0 +1,15 @@
+stages:
+  - build-container
+
+build-workflow-provisioner:
+  stage: build-container
+  image: docker:20.10.21-dind
+  before_script:
+    - docker version
+    - echo "$IMLA_CONTAINER_REGISTRY_PASS" | docker login $IMLA_CONTAINER_REGISTRY --username $IMLA_CONTAINER_REGISTRY_USER --password-stdin
+  script:
+    - ls -al
+    - docker build --no-cache --pull -t ${IMLA_CONTAINER_REGISTRY}/gx4ki/workflow-provisioner:latest .
+    - docker push ${IMLA_CONTAINER_REGISTRY}/gx4ki/workflow-provisioner:latest
+  tags:
+    - imla
