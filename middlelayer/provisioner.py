@@ -2,6 +2,7 @@
 Provisioner module which is used by edc-connector.
 Provisions the workflow-api for a requested service
 """
+import asyncio
 import os
 import subprocess
 import tempfile
@@ -50,12 +51,18 @@ def get_db():
         db.close()
 
 
-async def run_subcommand(cmd: List[str]):
+def run_subcommand(cmd: List[str]):
 
-    output = subprocess.run(cmd,
-                            check=True,
-                            encoding="utf-8",
-                            capture_output=True)
+    try:
+        output = subprocess.run(
+            cmd,
+            check=True,
+            stderr=subprocess.PIPE,
+            stdout=subprocess.PIPE,
+        )
+    except subprocess.CalledProcessError as err:
+        logger.debug("execution of command \"%s\" failed with %s", cmd, err.stderr)
+        raise RuntimeError("running subcommand failed") from err
 
     return output
 
@@ -63,11 +70,9 @@ async def run_subcommand(cmd: List[str]):
 @provisioner.on_event("startup")
 async def startup():
 
-    cmd = [
-        "kubectl",
-        "cluster-info"]
+    cmd = "kubectl get --raw /healthz"
 
-    result = await run_subcommand(cmd)
+    result = run_subcommand(cmd.split())
 
     logger.info(result.stdout)
 
@@ -126,7 +131,7 @@ def handle_edc_request(provisioner_request: HttpProvisionerRequest, db: Session)
         resourceName="test",
         contentDataAddress={"properties": {
             "type": "HttpData",
-            "baseUrl": f"http://workflow-provisioner:8888/details?workflow_id={consumer.workflow_backend_id}"
+            "baseUrl": f"http://workflow-provisioner:8888/details?consumer_id={consumer.id}"
         }}
     )
 
@@ -139,8 +144,8 @@ def handle_edc_request(provisioner_request: HttpProvisionerRequest, db: Session)
                                  headers={"x-api-key": "password"})
     except ConnectionError as connection_error:
         print(f"ConnectionError: {connection_error}")
-    finally:
-        logger.debug("work finished: callback request status: %s", response.status_code)
+
+    logger.debug("work finished: callback request status: %s", response.status_code)
 
 
 def deploy_workflow_api(workflow_backend_id: str,
@@ -239,14 +244,9 @@ def deploy_workflow_api(workflow_backend_id: str,
         ]
 
         for cmd in cmd_deploy_workflow_api:
-            result = subprocess.run(
-                cmd.split(),
-                stdout=subprocess.PIPE,
-                stderr=subprocess.PIPE,
-                check=True
-            )
-            logger.debug(result)
 
+            result = run_subcommand(cmd=cmd.split())
+            logger.debug(result)
             time.sleep(2)
 
     minio_version = "5.0.7"
