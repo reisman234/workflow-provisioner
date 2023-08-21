@@ -1,0 +1,830 @@
+{
+	"info": {
+		"_postman_id": "075e1f86-3d5b-4eee-bc1c-bebeede83f50",
+		"name": "LOCAL - EDC Data Management API",
+		"description": "## Overview\n\nThis Postman collection contains EDC Data Management API requests necessary to:\n- create _Assets_, _Policies_ and _Contract Definitions_, on provider side\n- start the the negotiation process and data transfer, on the consumer side.\n\n## Execution\n\nAll requests in the collection are supposed to be executed in the order they have been given. \n\nBy using the _Tests_ feature of Postman, it is possible to extract values from a response and make them available in the subsequent requests. This allows requests to be made after each other without a need for manual intervention (e.g. copying ID from a response into the next request).\n\n## Variables\n\nBefore you begin, please take a look at the _Variables_ section of the collection, where you should set the URLs to your connector instances, as well as the access details of your AWS S3 Buckets.",
+		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+	},
+	"item": [
+		{
+			"name": "init",
+			"item": [
+				{
+					"name": "[Consuer] Register DataPlane",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json",
+								"type": "text"
+							},
+							{
+								"key": "x-api-key",
+								"value": "{{API-KEY}}",
+								"type": "text"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"edctype\": \"dataspaceconnector:dataplaneinstance\",\n  \"id\": \"http-pull-consumer-dataplane\",\n  \"url\": \"{{CONSUMER_CONTROL}}/transfer\",\n  \"allowedSourceTypes\": [\n    \"HttpData\"\n  ],\n  \"allowedDestTypes\": [\n    \"HttpProxy\",\n    \"HttpData\"\n  ],\n  \"properties\": {\n    \"publicApiUrl\": \"{{CONSUMER_PUBLIC}}\"\n  }\n}"
+						},
+						"url": {
+							"raw": "{{CONSUMER_DMA}}/instances",
+							"host": [
+								"{{CONSUMER_DMA}}"
+							],
+							"path": [
+								"instances"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "[Provider] Register DataPlane",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json",
+								"type": "text"
+							},
+							{
+								"key": "x-api-key",
+								"value": "{{API-KEY}}",
+								"type": "text"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"edctype\": \"dataspaceconnector:dataplaneinstance\",\n  \"id\": \"http-pull-provider-dataplane\",\n  \"url\": \"{{PROVIDER_CONTROL}}/transfer\",\n  \"allowedSourceTypes\": [\n    \"HttpData\"\n  ],\n  \"allowedDestTypes\": [\n    \"HttpProxy\",\n    \"HttpData\"\n  ],\n  \"properties\": {\n    \"publicApiUrl\": \"{{PROVIDER_PUBLIC}}\"\n  }\n}"
+						},
+						"url": {
+							"raw": "{{PROVIDER_DMA}}/instances",
+							"host": [
+								"{{PROVIDER_DMA}}"
+							],
+							"path": [
+								"instances"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "[Provider] Create Dummy WF Asset",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "x-api-key",
+								"value": "{{API-KEY}}",
+								"type": "default"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"asset\": {\n    \"properties\": {\n      \"asset:prop:id\": \"{{ASSET_ID}}\",\n      \"asset:prop:name\": \"test-demo-asset\",\n      \"asset:prop:contenttype\": \"application/json\",\n      \"asset:prop:policy-id\": \"use-eu\"\n    }\n  },\n  \"dataAddress\": {\n    \"properties\": {\n      \"type\": \"WorkflowProvision\"\n\n    },\n    \"transferType\": {\n    \"contentType\": \"application/octet-stream\",\n    \"isFinite\": true\n    }\n  }\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{PROVIDER_DMA}}/assets",
+							"host": [
+								"{{PROVIDER_DMA}}"
+							],
+							"path": [
+								"assets"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "[Provider] Create USE Policy",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "x-api-key",
+								"value": "{{API-KEY}}",
+								"type": "default"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"id\": \"{{POLICY_ID}}\",\n  \"policy\": {\n    \"permissions\": [\n      {\n        \"target\": \"{{ASSET_ID}}\",\n        \"action\": {\n          \"type\": \"USE\"\n        },\n        \"edctype\": \"dataspaceconnector:permission\"\n      }\n    ]\n  },\n  \"@type\": {\n    \"@policytype\": \"set\"\n  }\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{PROVIDER_DMA}}/policydefinitions",
+							"host": [
+								"{{PROVIDER_DMA}}"
+							],
+							"path": [
+								"policydefinitions"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "[Provider] Create Contract Definition",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "x-api-key",
+								"value": "{{API-KEY}}",
+								"type": "default"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"id\": \"{{CONTRACT_DEF_ID}}\",\n    \"accessPolicyId\": \"{{POLICY_ID}}\",\n    \"contractPolicyId\": \"{{POLICY_ID}}\",\n    \"criteria\": [\n        {\n            \"operandLeft\": \"asset:prop:id\",\n            \"operator\": \"=\",\n            \"operandRight\": \"{{ASSET_ID}}\"\n        }\n    ]\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{PROVIDER_DMA}}/contractdefinitions",
+							"host": [
+								"{{PROVIDER_DMA}}"
+							],
+							"path": [
+								"contractdefinitions"
+							]
+						}
+					},
+					"response": []
+				}
+			]
+		},
+		{
+			"name": "negotiate",
+			"item": [
+				{
+					"name": "[Consumer] Get Provider's Catalog",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									" ",
+									"pm.test(\"get offer id\", function () {",
+									"    var jsonData = pm.response.json();",
+									"    pm.globals.set(\"OFFER_ID\", jsonData.contractOffers[0].id);",
+									"    console.log(pm.globals.get(\"OFFER_ID\"));",
+									"});",
+									"",
+									""
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"protocolProfileBehavior": {
+						"disableBodyPruning": true
+					},
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "x-api-key",
+								"value": "{{API-KEY}}",
+								"type": "default"
+							}
+						],
+						"body": {
+							"mode": "file",
+							"file": {}
+						},
+						"url": {
+							"raw": "{{CONSUMER_DMA}}/catalog?providerUrl={{PROVIDER_IDS}}/data",
+							"host": [
+								"{{CONSUMER_DMA}}"
+							],
+							"path": [
+								"catalog"
+							],
+							"query": [
+								{
+									"key": "providerUrl",
+									"value": "{{PROVIDER_IDS}}/data"
+								}
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "[Consumer] Negotiate an Offer",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									" ",
+									"pm.test(\"negotiate the offer\", function () {",
+									"    var jsonData = pm.response.json();",
+									"    pm.globals.set(\"C_NEGOTIATE_ID\", jsonData.id);",
+									"    console.log(pm.globals.get(\"C_NEGOTIATE_ID\"));",
+									"});",
+									"",
+									""
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "x-api-key",
+								"value": "{{API-KEY}}",
+								"type": "default"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"connectorId\": \"urn:connector:provider\",\n  \"connectorAddress\": \"{{PROVIDER_IDS}}/data\",\n  \"protocol\": \"ids-multipart\",\n  \"offer\": {\n    \"offerId\": \"{{OFFER_ID}}\",\n    \"assetId\": \"{{ASSET_ID}}\",\n    \"policy\": {\n      \"uid\": \"{{POLICY_ID}}\",\n      \"permissions\": [\n        {\n          \"edctype\": \"dataspaceconnector:permission\",\n          \"uid\": null,\n          \"target\": \"{{ASSET_ID}}\",\n          \"action\": {\n            \"type\": \"USE\",\n            \"includedIn\": null,\n            \"constraint\": null\n          },\n          \"assignee\": null,\n          \"assigner\": null,\n          \"constraints\": [],\n          \"duties\": []\n        }\n      ],\n      \"prohibitions\": [],\n      \"obligations\": [],\n      \"extensibleProperties\": {},\n      \"inheritsFrom\": null,\n      \"assigner\": null,\n      \"assignee\": null,\n      \"target\": null,\n      \"@type\": {\n        \"@policytype\": \"set\"\n      }\n    },\n    \"asset\": {\n      \"properties\": {\n        \"ids:byteSize\": null,\n        \"asset:prop:id\": \"{{ASSET_ID}}\",\n        \"ids:fileName\": null\n      }\n    }\n  }\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{CONSUMER_DMA}}/contractnegotiations",
+							"host": [
+								"{{CONSUMER_DMA}}"
+							],
+							"path": [
+								"contractnegotiations"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "[Consumer] Get Negotiation status",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"get agreement id\", function () {",
+									"    var jsonData = pm.response.json();",
+									"    pm.globals.set(\"C_AGREEMENT_ID\", jsonData.contractAgreementId);",
+									"    console.log(pm.globals.get(\"C_AGREEMENT_ID\"));",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"protocolProfileBehavior": {
+						"disableBodyPruning": true,
+						"disabledSystemHeaders": {
+							"accept": true,
+							"accept-encoding": true,
+							"user-agent": true,
+							"connection": true
+						}
+					},
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json",
+								"type": "text"
+							},
+							{
+								"key": "X-Api-Key",
+								"value": "{{API-KEY}}",
+								"type": "text"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": ""
+						},
+						"url": {
+							"raw": "{{CONSUMER_DMA}}/contractnegotiations/{{C_NEGOTIATE_ID}}",
+							"host": [
+								"{{CONSUMER_DMA}}"
+							],
+							"path": [
+								"contractnegotiations",
+								"{{C_NEGOTIATE_ID}}"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "[Consumer] HttpProxy TransferRequest",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json",
+								"type": "text"
+							},
+							{
+								"key": "x-api-key",
+								"value": "{{API-KEY}}",
+								"type": "text"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"connectorId\": \"urn:connector:edc\",\n  \"connectorAddress\": \"{{PROVIDER_IDS}}/data\",\n  \"contractId\": \"{{C_AGREEMENT_ID}}\",\n  \"assetId\": \"{{ASSET_ID}}\",\n  \"managedResources\": \"false\",\n  \"dataDestination\": {\n    \"type\": \"HttpProxy\"\n  }\n}"
+						},
+						"url": {
+							"raw": "{{CONSUMER_DMA}}/transferprocess",
+							"host": [
+								"{{CONSUMER_DMA}}"
+							],
+							"path": [
+								"transferprocess"
+							]
+						}
+					},
+					"response": []
+				}
+			]
+		},
+		{
+			"name": "data pull",
+			"item": [
+				{
+					"name": "[Consumer] Pull Data Copy",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "eyJhbGciOiJSUzI1NiJ9.eyJleHAiOjE2ODcxNjkxMTIsImRhZCI6IntcInByb3BlcnRpZXNcIjp7XCJhdXRoS2V5XCI6XCJBdXRob3JpemF0aW9uXCIsXCJiYXNlVXJsXCI6XCJodHRwOi8vMTkyLjE2OC4yMDUuMTA6ODI4My9wdWJsaWNcIixcImF1dGhDb2RlXCI6XCJleUpoYkdjaU9pSlNVekkxTmlKOS5leUpsZUhBaU9qRTJPRGN4TmpreE1USXNJbVJoWkNJNkludGNJbkJ5YjNCbGNuUnBaWE5jSWpwN1hDSmlZWE5sVlhKc1hDSTZYQ0pvZEhSd09pOHZkMjl5YTJac2IzY3RjSEp2ZG1semFXOXVaWEk2T0RnNE9DOWtaWFJoYVd4elAzZHZjbXRtYkc5M1gybGtQVFl6WWpFME1qSTFMVEl5TjJVdE5EYzVNQzA1WmpRekxXSXlZemhtWlRBNFl6azVaRndpTEZ3aWEyVjVUbUZ0WlZ3aU9sd2lkR1Z6ZEZ3aUxGd2lkSGx3WlZ3aU9sd2lTSFIwY0VSaGRHRmNJbjE5SWl3aVkybGtJam9pWkdWdGJ5MWpiMjR0WkdWbUxUSTZPVEUzWW1Fek9ESXRORFkwWmkwME9HSmlMV0ZtTURBdFlXUXpOR1UxTnpZNE5HVmlJbjAuSVdQSXduZ2tHbVUxQ0E5ZlN3cTduQ1pTMU5Sbm8tQnlQcXNqc21zNEN0SkRhdUE0bDUxV3ZOREVXaG5yR2ZkOE9jLVlzVHNaZlFsSGlXenlMSjl4MjZHamV3R01YVkNkQ1hnZHhQQTZaQmxYSDZIS1Zrak1jN3dFM2o4V05MVUJvSm9DdnlhYUZ2OENuWkw5b0ZsRnFwUzNEU3AtTzVaLUM3ZFhQYlNwbnpvV3ZIcVZNVk1XWFRpOFU0UDljbDZpY0NFc2djWHY0N2xYeHlxQl9SQ0h3YjlLVm5BTEg2a3dNN2JuWlB6cmZEYkZrSElyTWJfOUZmYndLNDNnbTNBVFVLOU54Nl9EaWxUOEJRWUIyei16a28xRFdEMmRVQzZmbS1TMHNhOWhvdE1sU2hZaEpzZy1Wa0pYUE1yNHM2alY3SGpyWVVISWJCQndvSlkwMnU0N193XCIsXCJwcm94eU1ldGhvZFwiOlwidHJ1ZVwiLFwicHJveHlRdWVyeVBhcmFtc1wiOlwidHJ1ZVwiLFwicHJveHlCb2R5XCI6XCJ0cnVlXCIsXCJ0eXBlXCI6XCJIdHRwRGF0YVwiLFwicHJveHlQYXRoXCI6XCJ0cnVlXCJ9fSIsImNpZCI6ImRlbW8tY29uLWRlZi0yOjkxN2JhMzgyLTQ2NGYtNDhiYi1hZjAwLWFkMzRlNTc2ODRlYiJ9.cTaWr9JSPyH3FsFVod9hsPGeWXLu-WVxRImOrMu7sygRq39f05FVZTXeXq0qP-ThPJ2hqauyLEaPHs-NpkijXDq-l3YtwUfS7zY8Uw-CHJDu-MiAxuPECP5VEMIl9lxPDdPg9LbF2esS3oKYKoT7i0zZHjWXhvPtkmJwbUWaHkRqZxrlNdmTSee0RIlhAywx_a2URtxFdPu5A4ctyAVV1wQZ4oh5iLLSX34-Yrh5I5iGqc15rYaiyWH8LtJpGGiciodg_wq_WSmJ2ksHvTg07b_wqOR4mREctwH7uBnPQoH1D3DQPSI8-5_y54Hx-QglTJQVD9OAHDtGlmhJgbZVGw"
+							}
+						],
+						"url": {
+							"raw": "{{CONSUMER_PUBLIC}}",
+							"host": [
+								"{{CONSUMER_PUBLIC}}"
+							]
+						}
+					},
+					"response": []
+				}
+			]
+		},
+		{
+			"name": "Provider",
+			"item": [
+				{
+					"name": "transfer-details",
+					"item": [
+						{
+							"name": "[Provider] Get TransferProcess",
+							"event": [
+								{
+									"listen": "prerequest",
+									"script": {
+										"exec": [
+											"pm.globals.set(\"TRANSFER_PROCESS_ID\", \"f5aee244-9274-49d0-aa1b-545294116b7d\");"
+										],
+										"type": "text/javascript"
+									}
+								},
+								{
+									"listen": "test",
+									"script": {
+										"exec": [
+											"pm.test(\"get contract agreement id\", function () {",
+											"  var jsonData = pm.response.json();",
+											"  pm.globals.set(\"CONTRACT_AGREEMENT_ID\", jsonData.dataRequest.contractId);",
+											"  console.log(pm.globals.get(\"CONTRACT_AGREEMENT_ID\"));",
+											"});"
+										],
+										"type": "text/javascript"
+									}
+								}
+							],
+							"request": {
+								"method": "GET",
+								"header": [
+									{
+										"key": "x-api-key",
+										"value": "password",
+										"type": "default"
+									}
+								],
+								"url": {
+									"raw": "{{PROVIDER_DMA}}/transferprocess/{{TRANSFER_PROCESS_ID}}",
+									"host": [
+										"{{PROVIDER_DMA}}"
+									],
+									"path": [
+										"transferprocess",
+										"{{TRANSFER_PROCESS_ID}}"
+									]
+								}
+							},
+							"response": []
+						},
+						{
+							"name": "[Provider] Get ContractAgreement",
+							"event": [
+								{
+									"listen": "test",
+									"script": {
+										"exec": [
+											"pm.test(\"check consumerAgentId\", function () {",
+											"  var jsonData = pm.response.json();",
+											"  pm.expect(jsonData.consumerAgentId).to.eql(\"urn:connector:consumer\");",
+											"});"
+										],
+										"type": "text/javascript"
+									}
+								}
+							],
+							"request": {
+								"method": "GET",
+								"header": [
+									{
+										"key": "x-api-key",
+										"value": "password",
+										"type": "default"
+									}
+								],
+								"url": {
+									"raw": "{{PROVIDER_DMA}}/contractagreements/{{CONTRACT_AGREEMENT_ID}}",
+									"host": [
+										"{{PROVIDER_DMA}}"
+									],
+									"path": [
+										"contractagreements",
+										"{{CONTRACT_AGREEMENT_ID}}"
+									]
+								}
+							},
+							"response": []
+						}
+					]
+				},
+				{
+					"name": "[Provider] Get Assets",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "X-API-Key",
+								"value": "{{API-KEY}}",
+								"type": "default"
+							}
+						],
+						"url": {
+							"raw": "{{PROVIDER_DMA}}/assets/",
+							"host": [
+								"{{PROVIDER_DMA}}"
+							],
+							"path": [
+								"assets",
+								""
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "[Provider] Get Policies",
+					"protocolProfileBehavior": {
+						"disableBodyPruning": true
+					},
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "x-api-key",
+								"value": "{{API-KEY}}",
+								"type": "default"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"uid\": \"policy id public 1\",\n    \"prohibitions\": [],\n    \"obligations\": [],\n    \"permissions\": [\n        {\n            \"edctype\": \"dataspaceconnector:permission\",\n            \"action\": {\n                \"type\": \"USE\" \n            }\n        }\n    ]\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{PROVIDER_DMA}}/policydefinitions",
+							"host": [
+								"{{PROVIDER_DMA}}"
+							],
+							"path": [
+								"policydefinitions"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "[Provider] Get Contract Definitions",
+					"protocolProfileBehavior": {
+						"disableBodyPruning": true
+					},
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "x-api-key",
+								"value": "{{API-KEY}}",
+								"type": "default"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{PROVIDER_DMA}}/contractdefinitions/",
+							"host": [
+								"{{PROVIDER_DMA}}"
+							],
+							"path": [
+								"contractdefinitions",
+								""
+							]
+						}
+					},
+					"response": []
+				}
+			]
+		},
+		{
+			"name": "[Consumer] Get Transfer Status",
+			"request": {
+				"method": "GET",
+				"header": [
+					{
+						"key": "x-api-key",
+						"value": "{{API-KEY}}",
+						"type": "default"
+					}
+				],
+				"url": {
+					"raw": "{{CONSUMER_DMA}}/transferprocess/{{TRANSFER_ID}}/state",
+					"host": [
+						"{{CONSUMER_DMA}}"
+					],
+					"path": [
+						"transferprocess",
+						"{{TRANSFER_ID}}",
+						"state"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "[Consumer] Get Transfer Status Copy",
+			"request": {
+				"method": "POST",
+				"header": [
+					{
+						"key": "x-api-key",
+						"value": "{{API-KEY}}",
+						"type": "default"
+					}
+				],
+				"url": {
+					"raw": "{{CONSUMER_DMA}}/transferprocess/request",
+					"host": [
+						"{{CONSUMER_DMA}}"
+					],
+					"path": [
+						"transferprocess",
+						"request"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "[Consumer] /{id}/cancel",
+			"event": [
+				{
+					"listen": "test",
+					"script": {
+						"exec": [
+							""
+						],
+						"type": "text/javascript"
+					}
+				}
+			],
+			"request": {
+				"method": "POST",
+				"header": [
+					{
+						"key": "x-api-key",
+						"value": "{{API-KEY}}",
+						"type": "default"
+					}
+				],
+				"url": {
+					"raw": "{{CONSUMER_DMA}}/contractnegotiations/{{C_NEGOTIATE_ID}}/cancel",
+					"host": [
+						"{{CONSUMER_DMA}}"
+					],
+					"path": [
+						"contractnegotiations",
+						"{{C_NEGOTIATE_ID}}",
+						"cancel"
+					]
+				}
+			},
+			"response": []
+		}
+	],
+	"event": [
+		{
+			"listen": "prerequest",
+			"script": {
+				"type": "text/javascript",
+				"exec": [
+					""
+				]
+			}
+		},
+		{
+			"listen": "test",
+			"script": {
+				"type": "text/javascript",
+				"exec": [
+					""
+				]
+			}
+		}
+	],
+	"variable": [
+		{
+			"key": "CONSUMER_URL",
+			"value": "http://192.168.205.20",
+			"type": "default"
+		},
+		{
+			"key": "CONSUMER_DMA",
+			"value": "{{CONSUMER_URL}}:9192/api/v1/management",
+			"type": "default"
+		},
+		{
+			"key": "CONSUMER_IDS",
+			"value": "{{CONSUMER_URL}}:9292/api/v1/ids",
+			"type": "default"
+		},
+		{
+			"key": "CONSUMER_PUBLIC",
+			"value": "{{CONSUMER_URL}}:9293/public",
+			"type": "default"
+		},
+		{
+			"key": "CONSUMER_CONTROL",
+			"value": "{{CONSUMER_URL}}:9294/control",
+			"type": "default"
+		},
+		{
+			"key": "API_KEY_CONSUMER",
+			"value": "password",
+			"type": "default"
+		},
+		{
+			"key": "PROVIDER_URL",
+			"value": "http://192.168.205.10",
+			"type": "string"
+		},
+		{
+			"key": "PROVIDER_DMA",
+			"value": "{{PROVIDER_URL}}:8182/api/v1/management",
+			"type": "default"
+		},
+		{
+			"key": "PROVIDER_IDS",
+			"value": "{{PROVIDER_URL}}:8282/api/v1/ids",
+			"type": "default"
+		},
+		{
+			"key": "PROVIDER_PUBLIC",
+			"value": "{{PROVIDER_URL}}:8283/public",
+			"type": "default"
+		},
+		{
+			"key": "PROVIDER_CONTROL",
+			"value": "{{PROVIDER_URL}}:8284/control",
+			"type": "default"
+		},
+		{
+			"key": "ASSET_ID",
+			"value": "demo-asset-1",
+			"type": "string"
+		},
+		{
+			"key": "POLICY_ID",
+			"value": "demo-policy-1",
+			"type": "string"
+		},
+		{
+			"key": "CONTRACT_DEF_ID",
+			"value": "demo-con-def-1",
+			"type": "string"
+		},
+		{
+			"key": "API-KEY",
+			"value": "password",
+			"type": "string"
+		},
+		{
+			"key": "AWS-SOURCE-REGION",
+			"value": "local",
+			"type": "string"
+		},
+		{
+			"key": "AWS-SOURCE-BUCKET-NAME",
+			"value": "from",
+			"type": "string"
+		},
+		{
+			"key": "AWS-SOURCE-PATH",
+			"value": "dataset.zip",
+			"type": "string"
+		},
+		{
+			"key": "AWS-SOURCE-ACCESS-KEY",
+			"value": "minio",
+			"type": "string"
+		},
+		{
+			"key": "AWS-SOURCE-SECRET-KEY",
+			"value": "miniosecret",
+			"type": "string"
+		},
+		{
+			"key": "AWS_SOURCE_ENDPOINT_OVERRIDE",
+			"value": "http://localhost:19000",
+			"type": "default"
+		},
+		{
+			"key": "AWS_TARGET_REGION",
+			"value": "local",
+			"type": "string"
+		},
+		{
+			"key": "AWS_TARGET_BUCKET_NAME",
+			"value": "output",
+			"type": "string"
+		},
+		{
+			"key": "AWS_TARGET_PATH",
+			"value": "dataset.zip",
+			"type": "string"
+		},
+		{
+			"key": "AWS_TARGET_ACCESS_KEY",
+			"value": "root",
+			"type": "string"
+		},
+		{
+			"key": "AWS_TARGET_SECRET_KEY",
+			"value": "miniosecret",
+			"type": "string"
+		},
+		{
+			"key": "AWS_TARGET_ENDPOINT_OVERRIDE",
+			"value": "http://localhost:20000",
+			"type": "default"
+		}
+	]
+}
