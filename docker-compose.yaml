@@ -3,7 +3,7 @@ services:
   workflow-provisioner:
     build:
       context: .
-    image: gx4ki/workflow-provisioner
+    image: imlahso/workflow-provisioner
     env_file: ./config/workflow-provisioner.env
     container_name: workflow-provisioner
 

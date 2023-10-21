@@ -15,11 +15,9 @@ spec:
         app: workflow-provisioner
     spec:
       serviceAccountName: workflow-provisioner-admin
-      imagePullSecrets:
-        - name: imla-registry
       containers:
         - name: workflow-provisioner
-          image: harbor.gx4ki.imla.hs-offenburg.de/gx4ki/workflow-provisioner@latest
+          image: imlahso/workflow-provisioner@latest
           resources:
             limits:
               memory: "256Mi"

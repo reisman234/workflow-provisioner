@@ -21,38 +21,10 @@ data:
           }
       ],
       "workflow_resource": {
-          "worker_image": "harbor.gx4ki.imla.hs-offenburg.de/gx4ki/dummy-job@sha256:89475128de6cc831886b87319b6ca66da99fe05c83877d5d37d6a7cb437e9a92",
+          "worker_image": "imlahso/dummy-job:latest",
           "worker_image_output_directory": "/output/",
           "worker_image_args": ["entrypoint.sh"],
           "worker_image_command": ["/bin/sh"],
           "gpu": false
       }
-    }
-  carla.json: |
-    {
-      "service_id": "carla",
-      "inputs":
-        [
-          {
-            "resource_name": "env",
-            "type": 1,
-            "description": "List of environment Variables for Carla Container"
-          }
-        ],
-      "outputs":
-        [
-          {
-            "resource_name": "rosbag.bag",
-            "type": 2,
-            "description": "Generated rosbag file from .env file"
-          }
-        ],
-      "workflow_resource":
-        {
-          "worker_image": "harbor.gx4ki.imla.hs-offenburg.de/gx4ki/carla:test",
-          "worker_image_output_directory": "/home/carla/rosbag",
-          "worker_image_args": ["entrypoint.sh"],
-          "worker_image_command": ["/bin/bash"],
-          "gpu": true
-        }
     }

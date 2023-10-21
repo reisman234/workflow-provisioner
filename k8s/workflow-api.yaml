@@ -11,8 +11,6 @@ spec:
       labels:
         app: workflow-api
     spec:
-      imagePullSecrets:
-        - name: imla-registry
       serviceAccountName: workflow-api-service-account
       volumes:
         - name: workflow-api-config
@@ -23,7 +21,7 @@ spec:
             name: demo-assets
       containers:
         - name: workflow-api
-          image: harbor.gx4ki.imla.hs-offenburg.de/gx4ki/workflow-api:latest
+          image: imlahso/workflow-api:latest
           imagePullPolicy: Always
           resources:
             limits:

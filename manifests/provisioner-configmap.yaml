@@ -3,4 +3,6 @@ kind: ConfigMap
 metadata:
   name: workflow-provisioner-env
 data:
-  WF_PROVISIONER_BACKEND_ENTRYPOINT: connector.gx4ki.imla.hs-offenburg.de
+  WF_PROVISIONER_BACKEND_ENTRYPOINT: test.domain.de # hostname under which the workflow-api will be deployed
+  WF_API_WF_BACKEND_DATA_SIDE_CAR: imlahso/data-side-car:latest # data-side-car to use for workflow-jobs
+  WF_API_WF_BACKEND_REGISTRY_SECRET: "" # name of the secret resource for the registry

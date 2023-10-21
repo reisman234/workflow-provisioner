@@ -39,6 +39,15 @@ WF_API_STATIC_ACCESS_TOKEN = os.getenv("WF_API_STATIC_ACCESS_TOKEN")
 BACKEND_ENTRYPOINT = os.getenv("WF_PROVISIONER_BACKEND_ENTRYPOINT")
 if not BACKEND_ENTRYPOINT:
     raise ValueError("unspecified variable: WF_PROVISIONER_BACKEND_ENTRYPOINT")
+logger.info("BACKEND_ENTRYPOINT: %s", BACKEND_ENTRYPOINT)
+
+WF_API_WF_BACKEND_DATA_SIDE_CAR = os.getenv("WF_API_WF_BACKEND_DATA_SIDE_CAR")
+if not WF_API_WF_BACKEND_DATA_SIDE_CAR:
+    raise ValueError("unspecified variable: WF_API_WF_BACKEND_DATA_SIDE_CAR")
+logger.info("WF_API_WF_BACKEND_DATA_SIDE_CAR: %s", WF_API_WF_BACKEND_DATA_SIDE_CAR)
+
+WF_API_WF_BACKEND_REGISTRY_SECRET = os.getenv("WF_API_WF_BACKEND_REGISTRY_SECRET")
+logger.info("WF_API_WF_BACKEND_REGISTRY_SECRET: %s", WF_API_WF_BACKEND_REGISTRY_SECRET)
 
 # dependency
 
@@ -171,8 +180,10 @@ def deploy_workflow_api(workflow_backend_id: str,
 
     workflow_backend = kubernetes
     workflow_backend_namespace = {workflow_backend_id}
-    workflow_backend_image_pull_secret = imla-registry
-    workflow_backend_data_side_car_image = harbor.gx4ki.imla.hs-offenburg.de/gx4ki/data-side-car:latest
+    workflow_backend_image_pull_secret = {WF_API_WF_BACKEND_REGISTRY_SECRET}
+    workflow_backend_data_side_car_image = {WF_API_WF_BACKEND_DATA_SIDE_CAR}
+    workflow_k8s_backend_job_storage_type = PERSISTENT_VOLUME_CLAIM
+    # workflow_k8s_backend_job_storage_size = 5Gi
 
     [minio]
     endpoint = minio:9000
@@ -236,12 +247,15 @@ def deploy_workflow_api(workflow_backend_id: str,
             f"cat {tmp_file.name}",
             f"kubectl -n {user_namespace} create secret generic workflow-api-config --from-file=workflow-api.cfg={tmp_file.name}",
             f"kubectl -n {user_namespace} create configmap workflow-api-env --from-env-file={tmp_env_file.name}",
-            f"kubectl -n {user_namespace} apply -f ./k8s/secrets/imla-registry-secret.yaml",
             f"kubectl -n {user_namespace} apply -f ./k8s/workflow-api-service-account.yaml",
             f"kubectl -n {user_namespace} apply -f ./k8s/workflow-api-demo-assets.yml",
             f"kubectl -n {user_namespace} apply -f ./k8s/workflow-api.yaml",
             f"kubectl -n {user_namespace} apply -f {tmp_k8s_ingress.name}",
         ]
+        if os.path.exists("./k8s/secrets/registry-secret.yaml"):
+            cmd_deploy_workflow_api.append(
+                f"kubectl -n {user_namespace} apply -f ./k8s/secrets/registry-secret.yaml",
+            )
 
         for cmd in cmd_deploy_workflow_api:
 
